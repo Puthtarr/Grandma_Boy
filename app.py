@@ -1,4 +1,5 @@
 import streamlit as st
+from submit_to_gsheet import submit_orders_to_sheet
 
 # ---------- DATA ----------
 categories = {"ต้ม": 50, "ผัด": 45, "เส้น": 40, "ข้าวคลุก": 55}
@@ -133,7 +134,8 @@ st.sidebar.markdown(f"### 💵 ยอดรวมทั้งหมด: {total_a
 # ✅ ปุ่ม Submit ออเดอร์ทั้งหมด
 if len(st.session_state.orders) > 0:
     if st.sidebar.button("✅ ส่งออเดอร์ทั้งหมด"):
-        st.success("ส่งออเดอร์เรียบร้อยแล้ว 🎉")
+        submit_orders_to_sheet(st.session_state.orders)
+        st.success("ส่งออเดอร์ไป Google Sheets เรียบร้อยแล้ว 🎉")
         st.write(st.session_state.orders)
         st.session_state.clear()
         st.rerun()
