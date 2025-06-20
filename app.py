@@ -26,7 +26,7 @@ if st.session_state.step == "category":
     cols = st.columns(2)
     for i, (cat, price) in enumerate(categories.items()):
         with cols[i % 2]:
-            st.image(image_map[cat], use_column_width=True)
+            st.image(image_map[cat], use_container_width=True)
             if st.button(f"{cat} ({price} บาท)", key=f"cat_{cat}"):
                 st.session_state.temp = {
                     "หมวดหมู่": cat,
@@ -50,36 +50,73 @@ elif st.session_state.step == "meat":
 elif st.session_state.step == "toppings":
     st.title("🥚 เลือกท็อปปิ้ง")
 
-    selected = st.multiselect("เลือกท็อปปิ้ง", list(toppings.keys()))
-    if st.button("ถัดไป"):
-        st.session_state.temp["ท็อปปิ้ง"] = selected
-        st.session_state.temp["topping_price"] = sum([toppings[t] for t in selected])
-        st.session_state.step = "size"
-        st.rerun()
+    for topping, topping_price in toppings.items():
+        if st.button(f'{topping} (+{topping_price} บาท)'):
+            st.session_state.temp["ทอปปิ้ง"] = topping
+            st.session_state.temp["topping_price"] = topping_price
+            st.session_state.step = "size"
+            st.rerun()
 
 # ---------- STEP: SIZE ----------
 elif st.session_state.step == "size":
-    st.title("🍚 เลือกขนาด")
+    st.markdown("<h2 style='font-size: 32px;'>🍚 เลือกขนาดอาหาร</h2>", unsafe_allow_html=True)
 
-    size = st.radio("ขนาด:", list(sizes.keys()))
-    if st.button("ยืนยันเมนูนี้"):
-        st.session_state.temp["ขนาด"] = size
-        st.session_state.temp["size_price"] = sizes[size]
+    # CSS สำหรับปรับปุ่มให้ใหญ่ขึ้น (เพิ่มด้านบนถ้ายังไม่ได้ใส่)
+    st.markdown("""
+        <style>
+        div.stButton > button {
+            font-size: 24px;
+            padding: 20px 36px;
+            border-radius: 12px;
+            width: 100%;
+            background-color: #f0f0f0;
+            color: black;
+            border: 2px solid #888;
+        }
+        div.stButton > button:hover {
+            background-color: #e0e0e0;
+            border-color: #555;
+        }
+        </style>
+    """, unsafe_allow_html=True)
 
-        # ✅ คำนวณราคารวมของเมนูนี้
-        total = (
-            st.session_state.temp["base_price"]
-            + st.session_state.temp["meat_price"]
-            + st.session_state.temp["topping_price"]
-            + st.session_state.temp["size_price"]
-        )
-        st.session_state.temp["ราคา"] = total
+    col1, col2 = st.columns(2)
 
-        # ✅ เพิ่มเข้า orders แล้ววนกลับหน้าแรก
-        st.session_state.orders.append(st.session_state.temp)
-        del st.session_state["temp"]
-        st.session_state.step = "category"
-        st.rerun()
+    with col1:
+        if st.button("✅ ธรรมดา", key="btn_normal"):
+            st.session_state.temp["ขนาด"] = "ธรรมดา"
+            st.session_state.temp["size_price"] = sizes["ธรรมดา"]
+
+            total = (
+                    st.session_state.temp["base_price"]
+                    + st.session_state.temp["meat_price"]
+                    + st.session_state.temp["topping_price"]
+                    + st.session_state.temp["size_price"]
+            )
+            st.session_state.temp["ราคา"] = total
+
+            st.session_state.orders.append(st.session_state.temp)
+            del st.session_state["temp"]
+            st.session_state.step = "category"
+            st.rerun()
+
+    with col2:
+        if st.button("✨ พิเศษ (+10 บาท)", key="btn_special"):
+            st.session_state.temp["ขนาด"] = "พิเศษ"
+            st.session_state.temp["size_price"] = sizes["พิเศษ"]
+
+            total = (
+                    st.session_state.temp["base_price"]
+                    + st.session_state.temp["meat_price"]
+                    + st.session_state.temp["topping_price"]
+                    + st.session_state.temp["size_price"]
+            )
+            st.session_state.temp["ราคา"] = total
+
+            st.session_state.orders.append(st.session_state.temp)
+            del st.session_state["temp"]
+            st.session_state.step = "category"
+            st.rerun()
 
 # ---------- STEP: SUMMARY ----------
 st.sidebar.title("🧾 ออเดอร์ทั้งหมด")
@@ -87,7 +124,7 @@ total_all = 0
 for i, order in enumerate(st.session_state.orders):
     with st.sidebar.expander(f"จาน {i+1} : {order['หมวดหมู่']} + {order['เนื้อ']}"):
         st.write(f"ขนาด: {order['ขนาด']}")
-        st.write(f"ท็อปปิ้ง: {', '.join(order['ท็อปปิ้ง']) if order['ท็อปปิ้ง'] else '-'}")
+        st.write(f"ท็อปปิ้ง: {order.get('ทอปปิ้ง', '-')}")
         st.write(f"ราคารวมจานนี้: {order['ราคา']} บาท")
         total_all += order["ราคา"]
 
